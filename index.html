@@ -329,29 +329,102 @@
     /* ══ GALLERY ══ */
     #gallery { padding: 0; }
     #gallery .inner { padding-top: 72px; padding-bottom: 0; }
+
+    /* Public view: masonry-like grid */
     .gallery-full {
       display: grid;
       grid-template-columns: repeat(12, 1fr);
       grid-auto-rows: 240px;
       gap: 4px;
-      margin-top: 0;
     }
-    .g-item { overflow: hidden; }
-    .g-item img {
+    .g-item { overflow: hidden; position: relative; }
+    .g-item img, .g-item video {
       width: 100%; height: 100%;
-      object-fit: cover;
-      display: block;
+      object-fit: cover; display: block;
       transition: transform 0.6s ease, filter 0.4s;
       filter: grayscale(20%);
     }
-    .g-item:hover img { transform: scale(1.04); filter: grayscale(0%); }
-    .g-item:nth-child(1) { grid-column: span 7; grid-row: span 2; }
-    .g-item:nth-child(2) { grid-column: span 5; }
-    .g-item:nth-child(3) { grid-column: span 5; }
-    .g-item:nth-child(4) { grid-column: span 4; }
-    .g-item:nth-child(5) { grid-column: span 4; }
-    .g-item:nth-child(6) { grid-column: span 4; }
-    .g-item:nth-child(7) { grid-column: span 12; grid-row: span 1; height: 200px; }
+    .g-item:hover img, .g-item:hover video { transform: scale(1.04); filter: grayscale(0%); }
+    .g-item:nth-child(1)  { grid-column: span 7; grid-row: span 2; }
+    .g-item:nth-child(2)  { grid-column: span 5; }
+    .g-item:nth-child(3)  { grid-column: span 5; }
+    .g-item:nth-child(4)  { grid-column: span 4; }
+    .g-item:nth-child(5)  { grid-column: span 4; }
+    .g-item:nth-child(6)  { grid-column: span 4; }
+    .g-item:nth-child(7)  { grid-column: span 12; }
+    .g-item:nth-child(8)  { grid-column: span 6; }
+    .g-item:nth-child(9)  { grid-column: span 6; }
+    .g-item:nth-child(10) { grid-column: span 4; }
+    .g-item:nth-child(11) { grid-column: span 4; }
+    .g-item:nth-child(12) { grid-column: span 4; }
+
+    /* Edit mode drag grid */
+    .gallery-edit-grid {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 12px;
+      padding: 0 48px 60px;
+    }
+    .ge-item {
+      position: relative;
+      aspect-ratio: 1;
+      background: #111;
+      border: 1px solid var(--line);
+      overflow: hidden;
+      cursor: grab;
+      transition: box-shadow 0.2s, opacity 0.2s;
+    }
+    .ge-item:active { cursor: grabbing; }
+    .ge-item.dragging { opacity: 0.35; box-shadow: 0 0 0 2px var(--gold); }
+    .ge-item.drag-over { box-shadow: 0 0 0 2px var(--gold); }
+    .ge-item img, .ge-item video {
+      width: 100%; height: 100%;
+      object-fit: cover; display: block;
+      pointer-events: none;
+    }
+    .ge-item .ge-overlay {
+      position: absolute; inset: 0;
+      background: rgba(0,0,0,0);
+      display: flex; align-items: center; justify-content: center;
+      gap: 10px;
+      transition: background 0.2s;
+    }
+    .ge-item:hover .ge-overlay { background: rgba(0,0,0,0.55); }
+    .ge-btn {
+      display: none;
+      padding: 7px 14px;
+      border: 1px solid rgba(255,255,255,0.3);
+      background: rgba(0,0,0,0.6);
+      color: #fff;
+      font-family: var(--f-head);
+      font-size: 10px; letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; transition: border-color 0.2s;
+    }
+    .ge-item:hover .ge-btn { display: inline-block; }
+    .ge-btn:hover { border-color: var(--gold); color: var(--gold); }
+    .ge-btn.del { border-color: rgba(200,80,80,0.4); }
+    .ge-btn.del:hover { border-color: #e05555; color: #e05555; }
+    .ge-add {
+      aspect-ratio: 1;
+      border: 1px dashed var(--line);
+      display: flex; flex-direction: column;
+      align-items: center; justify-content: center;
+      gap: 10px; cursor: pointer;
+      transition: border-color 0.2s;
+      background: transparent;
+    }
+    .ge-add:hover { border-color: var(--gold); }
+    .ge-add-icon { font-size: 28px; color: var(--muted); }
+    .ge-add-label {
+      font-family: var(--f-head); font-size: 10px;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--muted);
+    }
+    .ge-drag-hint {
+      font-family: var(--f-head); font-size: 10px;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--muted);
+      padding: 0 48px 24px; display: none;
+    }
+    body.edit-mode .ge-drag-hint { display: block; }
 
     /* ══ SOCIAL / LINKS ══ */
     #social { padding: 0; }
@@ -760,29 +833,11 @@
       <span class="sec-title">Media · Fotos</span>
     </div>
   </div>
-  <div class="gallery-full">
-    <div class="g-item img-wrap" data-img-key="gallery1" onclick="triggerImgChange(this)">
-      <img src="images/gallery1.png" alt="" id="img-gallery1" />
-    </div>
-    <div class="g-item img-wrap" data-img-key="gallery2" onclick="triggerImgChange(this)">
-      <img src="images/gallery2.png" alt="" id="img-gallery2" />
-    </div>
-    <div class="g-item img-wrap" data-img-key="gallery3" onclick="triggerImgChange(this)">
-      <img src="images/gallery3.png" alt="" id="img-gallery3" />
-    </div>
-    <div class="g-item img-wrap" data-img-key="gallery4" onclick="triggerImgChange(this)">
-      <img src="images/gallery4.png" alt="" id="img-gallery4" />
-    </div>
-    <div class="g-item img-wrap" data-img-key="gallery5" onclick="triggerImgChange(this)">
-      <img src="images/gallery5.png" alt="" id="img-gallery5" />
-    </div>
-    <div class="g-item img-wrap" data-img-key="gallery6" onclick="triggerImgChange(this)">
-      <img src="images/gallery6.png" alt="" id="img-gallery6" />
-    </div>
-    <div class="g-item img-wrap" data-img-key="gallery7" onclick="triggerImgChange(this)">
-      <img src="images/gallery7.png" alt="" id="img-gallery7" />
-    </div>
-  </div>
+  <!-- Public view (hidden in edit mode via JS) -->
+  <div class="gallery-full" id="gallery-public"></div>
+  <!-- Edit mode drag grid -->
+  <div class="ge-drag-hint">Arrastrá para reordenar · Hover para cambiar o eliminar</div>
+  <div class="gallery-edit-grid" id="gallery-edit" style="display:none;"></div>
 </div>
 
 <!-- ══ SOCIAL ══ -->
@@ -821,7 +876,7 @@
         </div>
         <span class="social-arrow">↗</span>
       </a>
-      <a class="social-row" href="https://drive.google.com/" target="_blank" id="link-drive">
+      <a class="social-row" href="https://drive.google.com/drive/folders/1Jq60NxU2-aPoVomHKvzEWcsFhveWrhhL" target="_blank" id="link-drive">
         <div class="social-row-left">
           <span id="el-s-gd-name" class="social-platform" contenteditable="false">Google Drive</span>
           <span id="el-s-gd-handle" class="social-handle" contenteditable="false">Fotos · Press Kit</span>
@@ -932,12 +987,15 @@
 
 <!-- ══ FILE INPUT ══ -->
 <input type="file" id="img-file-input" accept="image/*,video/*" style="display:none;" />
+<input type="file" id="gallery-file-input" accept="image/*,video/*" style="display:none;" />
 
 <!-- ══ SUPABASE SDK ══ -->
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <script>
-  /* ═══ CONFIG ═══ */
+  /* ═══════════════════════════════════════════
+     CONFIG
+  ═══════════════════════════════════════════ */
   const SUPA_URL = 'https://pvjltsinguznuqtiomvi.supabase.co';
   const SUPA_KEY = 'sb_publishable__k2PZKQP4jOwkA6wqSLVtw_cCbGZ4jf';
   const BUCKET   = 'presskit-media';
@@ -947,9 +1005,164 @@
   const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
 
   let editMode = false;
-  let currentImgWrap = null;
+  let currentImgWrap = null;  // for non-gallery uploads
 
-  /* ═══ LOGIN ═══ */
+  /* ═══════════════════════════════════════════
+     GALLERY STATE
+     galleryItems = [ { url, isVideo }, … ]  ordered list
+  ═══════════════════════════════════════════ */
+  let galleryItems = [
+    { url: 'images/gallery1.png', isVideo: false },
+    { url: 'images/gallery2.png', isVideo: false },
+    { url: 'images/gallery3.png', isVideo: false },
+    { url: 'images/gallery4.png', isVideo: false },
+    { url: 'images/gallery5.png', isVideo: false },
+    { url: 'images/gallery6.png', isVideo: false },
+    { url: 'images/gallery7.png', isVideo: false },
+  ];
+
+  /* ── Render public gallery ── */
+  function renderPublicGallery() {
+    const container = document.getElementById('gallery-public');
+    container.innerHTML = '';
+    galleryItems.forEach((item, i) => {
+      const div = document.createElement('div');
+      div.className = 'g-item';
+      if (item.isVideo) {
+        const v = document.createElement('video');
+        v.src = item.url; v.loop = true; v.muted = true; v.autoplay = true; v.playsInline = true;
+        div.appendChild(v);
+      } else {
+        const img = document.createElement('img');
+        img.src = item.url; img.alt = '';
+        div.appendChild(img);
+      }
+      container.appendChild(div);
+    });
+  }
+
+  /* ── Render edit grid with drag & drop ── */
+  let dragSrcIdx = null;
+
+  function renderEditGallery() {
+    const grid = document.getElementById('gallery-edit');
+    grid.innerHTML = '';
+
+    galleryItems.forEach((item, idx) => {
+      const div = document.createElement('div');
+      div.className = 'ge-item';
+      div.draggable = true;
+      div.dataset.idx = idx;
+
+      // Media
+      if (item.isVideo) {
+        const v = document.createElement('video');
+        v.src = item.url; v.muted = true; v.loop = true; v.autoplay = true; v.playsInline = true;
+        div.appendChild(v);
+      } else {
+        const img = document.createElement('img');
+        img.src = item.url; img.alt = '';
+        div.appendChild(img);
+      }
+
+      // Overlay with buttons
+      const ov = document.createElement('div');
+      ov.className = 'ge-overlay';
+
+      const btnChange = document.createElement('button');
+      btnChange.className = 'ge-btn';
+      btnChange.textContent = 'Cambiar';
+      btnChange.onclick = (e) => { e.stopPropagation(); openGalleryUpload(idx); };
+
+      const btnDel = document.createElement('button');
+      btnDel.className = 'ge-btn del';
+      btnDel.textContent = 'Quitar';
+      btnDel.onclick = (e) => { e.stopPropagation(); deleteGalleryItem(idx); };
+
+      ov.appendChild(btnChange);
+      ov.appendChild(btnDel);
+      div.appendChild(ov);
+
+      // Drag events
+      div.addEventListener('dragstart', e => {
+        dragSrcIdx = idx;
+        div.classList.add('dragging');
+        e.dataTransfer.effectAllowed = 'move';
+      });
+      div.addEventListener('dragend', () => {
+        div.classList.remove('dragging');
+        document.querySelectorAll('.ge-item').forEach(el => el.classList.remove('drag-over'));
+      });
+      div.addEventListener('dragover', e => {
+        e.preventDefault();
+        e.dataTransfer.dropEffect = 'move';
+        document.querySelectorAll('.ge-item').forEach(el => el.classList.remove('drag-over'));
+        div.classList.add('drag-over');
+      });
+      div.addEventListener('drop', e => {
+        e.preventDefault();
+        if (dragSrcIdx === null || dragSrcIdx === idx) return;
+        const moved = galleryItems.splice(dragSrcIdx, 1)[0];
+        galleryItems.splice(idx, 0, moved);
+        dragSrcIdx = null;
+        renderEditGallery();
+        renderPublicGallery();
+      });
+
+      grid.appendChild(div);
+    });
+
+    // Add button
+    const addBtn = document.createElement('div');
+    addBtn.className = 'ge-add';
+    addBtn.innerHTML = '<div class="ge-add-icon">+</div><div class="ge-add-label">Agregar foto / video</div>';
+    addBtn.onclick = () => openGalleryUpload(null);
+    grid.appendChild(addBtn);
+  }
+
+  /* ── Delete item ── */
+  function deleteGalleryItem(idx) {
+    galleryItems.splice(idx, 1);
+    renderEditGallery();
+    renderPublicGallery();
+  }
+
+  /* ── Upload new or replace gallery item ── */
+  let galleryUploadTargetIdx = null;
+
+  function openGalleryUpload(idx) {
+    galleryUploadTargetIdx = idx; // null = add new
+    document.getElementById('gallery-file-input').click();
+  }
+
+  document.addEventListener('DOMContentLoaded', () => {
+    document.getElementById('gallery-file-input').addEventListener('change', async function () {
+      if (!this.files || !this.files[0]) return;
+      const file    = this.files[0];
+      const isVideo = file.type.startsWith('video/');
+      const ext     = file.name.split('.').pop();
+      const key     = 'gallery_' + Date.now();
+      const path    = `${key}.${ext}`;
+      showToast('Subiendo…');
+      const { error } = await supa.storage.from(BUCKET).upload(path, file, { upsert: true, contentType: file.type });
+      if (error) { showToast('Error: ' + error.message); this.value = ''; return; }
+      const { data: urlData } = supa.storage.from(BUCKET).getPublicUrl(path);
+      const url = urlData.publicUrl;
+      if (galleryUploadTargetIdx === null) {
+        galleryItems.push({ url, isVideo });
+      } else {
+        galleryItems[galleryUploadTargetIdx] = { url, isVideo };
+      }
+      renderEditGallery();
+      renderPublicGallery();
+      showToast('Foto/video subido ✓ — guardá los cambios');
+      this.value = '';
+    });
+  });
+
+  /* ═══════════════════════════════════════════
+     LOGIN
+  ═══════════════════════════════════════════ */
   function openLogin() {
     document.getElementById('login-modal').classList.add('show');
     ['login-user','login-pass'].forEach(id => document.getElementById(id).value = '');
@@ -966,22 +1179,35 @@
   document.getElementById('login-pass').addEventListener('keydown', e => { if (e.key === 'Enter') doLogin(); });
   document.getElementById('login-modal').addEventListener('click', e => { if (e.target.id === 'login-modal') closeLogin(); });
 
-  /* ═══ EDIT MODE ═══ */
+  /* ═══════════════════════════════════════════
+     EDIT MODE
+  ═══════════════════════════════════════════ */
   function enterEdit() {
     editMode = true;
     document.body.classList.add('edit-mode');
     document.getElementById('edit-toolbar').classList.add('show');
     document.querySelectorAll('[contenteditable="false"]').forEach(el => el.setAttribute('contenteditable','true'));
+    // Switch gallery views
+    document.getElementById('gallery-public').style.display = 'none';
+    document.getElementById('gallery-edit').style.display   = 'grid';
+    renderEditGallery();
     showToast('Modo edición activado');
   }
+
   function exitEdit() {
     editMode = false;
     document.body.classList.remove('edit-mode');
     document.getElementById('edit-toolbar').classList.remove('show');
     document.querySelectorAll('[contenteditable="true"]').forEach(el => el.setAttribute('contenteditable','false'));
+    // Switch back
+    document.getElementById('gallery-public').style.display = '';
+    document.getElementById('gallery-edit').style.display   = 'none';
+    renderPublicGallery();
   }
 
-  /* ═══ IMAGE / VIDEO UPLOAD ═══ */
+  /* ═══════════════════════════════════════════
+     NON-GALLERY IMAGE UPLOAD (hero, bio, rider)
+  ═══════════════════════════════════════════ */
   function triggerImgChange(wrap) {
     if (!editMode) return;
     currentImgWrap = wrap;
@@ -1018,27 +1244,38 @@
     this.value = '';
   });
 
-  /* ═══ SAVE TEXTS ═══ */
+  /* ═══════════════════════════════════════════
+     SAVE EVERYTHING
+  ═══════════════════════════════════════════ */
   async function saveContent() {
     showToast('Guardando…');
     const upserts = [];
-    // Capture every editable element that has an id
+
+    // Texts
     document.querySelectorAll('[contenteditable]').forEach(el => {
       if (el.id) upserts.push({ key: 'text__' + el.id, value: el.innerHTML });
     });
-    // Also save social link hrefs
+
+    // Social hrefs
     document.querySelectorAll('a[id^="link-"]').forEach(a => {
       upserts.push({ key: 'href__' + a.id, value: a.href });
     });
+
+    // Gallery order + URLs
+    upserts.push({ key: 'gallery__items', value: JSON.stringify(galleryItems) });
+
     if (!upserts.length) { showToast('Nada que guardar'); return; }
     const { error } = await supa.from(TABLE).upsert(upserts, { onConflict: 'key' });
     error ? showToast('Error: ' + error.message) : showToast('Guardado ✓ (' + upserts.length + ' campos)');
   }
 
-  /* ═══ LOAD FROM SUPABASE ═══ */
+  /* ═══════════════════════════════════════════
+     LOAD FROM SUPABASE
+  ═══════════════════════════════════════════ */
   async function loadFromSupabase() {
     const { data, error } = await supa.from(TABLE).select('key, value');
-    if (error || !data) return;
+    if (error || !data) { renderPublicGallery(); return; }
+
     data.forEach(({ key, value }) => {
       if (key.startsWith('text__')) {
         const el = document.getElementById(key.replace('text__',''));
@@ -1068,10 +1305,17 @@
           if (img) img.src = value;
         }
       }
+      if (key === 'gallery__items') {
+        try { galleryItems = JSON.parse(value); } catch(e) {}
+      }
     });
+
+    renderPublicGallery();
   }
 
-  /* ═══ TOAST ═══ */
+  /* ═══════════════════════════════════════════
+     TOAST
+  ═══════════════════════════════════════════ */
   let toastTimer;
   function showToast(msg) {
     const t = document.getElementById('toast');
@@ -1080,7 +1324,9 @@
     toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  /* ═══ INIT ═══ */
+  /* ═══════════════════════════════════════════
+     INIT
+  ═══════════════════════════════════════════ */
   loadFromSupabase();
 </script>
 </body>
