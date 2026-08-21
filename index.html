@@ -50,7 +50,7 @@
       cursor: pointer;
     }
     body.edit-mode .img-wrap::after {
-      content: "📷 cambiar imagen";
+      content: "📷 cambiar imagen / video";
       position: absolute;
       inset: 0;
       display: flex;
@@ -754,22 +754,38 @@
 <!-- ═══ TOAST ═══ -->
 <div id="toast"></div>
 
-<!-- ═══ FILE INPUT ═══ -->
-<input type="file" id="img-file-input" accept="image/*" />
+<!-- ═══ FILE INPUT (imagen o video) ═══ -->
+<input type="file" id="img-file-input" accept="image/*,video/*" />
+
+<!-- ═══ SUPABASE SDK ═══ -->
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/dist/umd/supabase.min.js"></script>
 
 <!-- ═══ SCRIPT ═══ -->
 <script>
-  /* ── CREDENTIALS ── */
+  /* ══════════════════════════════════════
+     SUPABASE CONFIG
+  ══════════════════════════════════════ */
+  const SUPA_URL  = 'https://pvjltsinguznuqtiomvi.supabase.co';
+  const SUPA_KEY  = 'sb_publishable__k2PZKQP4jOwkA6wqSLVtw_cCbGZ4jf';
+  const BUCKET    = 'presskit-media';
+  const TABLE     = 'presskit_content';
+
+  const supa = supabase.createClient(SUPA_URL, SUPA_KEY);
+
+  /* ══════════════════════════════════════
+     CREDENTIALS
+  ══════════════════════════════════════ */
   const CREDS = { user: 'thomy', pass: '3211' };
 
-  /* ── EDIT STATE ── */
+  /* ══════════════════════════════════════
+     STATE
+  ══════════════════════════════════════ */
   let editMode = false;
   let currentImgWrap = null;
 
-  /* ── STORAGE KEY ── */
-  const STORE_KEY = 'kato_presskit_v1';
-
-  /* ── LOGIN ── */
+  /* ══════════════════════════════════════
+     LOGIN
+  ══════════════════════════════════════ */
   function openLogin() {
     document.getElementById('login-modal').classList.add('show');
     document.getElementById('login-user').value = '';
@@ -797,19 +813,19 @@
     if (e.target === document.getElementById('login-modal')) closeLogin();
   });
 
-  /* ── ENTER EDIT MODE ── */
+  /* ══════════════════════════════════════
+     EDIT MODE
+  ══════════════════════════════════════ */
   function enterEdit() {
     editMode = true;
     document.body.classList.add('edit-mode');
     document.getElementById('edit-toolbar').classList.add('show');
-    // Enable contenteditable on all text nodes
     document.querySelectorAll('[contenteditable="false"]').forEach(el => {
       el.setAttribute('contenteditable', 'true');
     });
     showToast('Modo edición activado');
   }
 
-  /* ── EXIT EDIT MODE ── */
   function exitEdit() {
     editMode = false;
     document.body.classList.remove('edit-mode');
@@ -819,90 +835,163 @@
     });
   }
 
-  /* ── TRIGGER IMAGE CHANGE ── */
+  /* ══════════════════════════════════════
+     IMAGE / VIDEO UPLOAD → SUPABASE STORAGE
+  ══════════════════════════════════════ */
   function triggerImgChange(wrap) {
     if (!editMode) return;
     currentImgWrap = wrap;
     document.getElementById('img-file-input').click();
   }
-  document.getElementById('img-file-input').addEventListener('change', function() {
+
+  document.getElementById('img-file-input').addEventListener('change', async function () {
     if (!this.files || !this.files[0] || !currentImgWrap) return;
     const file = this.files[0];
-    const reader = new FileReader();
-    reader.onload = function(e) {
-      const img = currentImgWrap.querySelector('img');
-      if (img) {
-        img.src = e.target.result;
-        // Store base64 in dataset for save
-        img.dataset.newSrc = e.target.result;
+    const imgKey = currentImgWrap.dataset.imgKey || ('media_' + Date.now());
+    const ext    = file.name.split('.').pop();
+    const path   = `${imgKey}.${ext}`;
+    const isVideo = file.type.startsWith('video/');
+
+    showToast('Subiendo archivo…');
+
+    // Upload to Supabase Storage (upsert = reemplaza si ya existe)
+    const { error: upErr } = await supa.storage
+      .from(BUCKET)
+      .upload(path, file, { upsert: true, contentType: file.type });
+
+    if (upErr) {
+      showToast('Error al subir: ' + upErr.message);
+      this.value = '';
+      return;
+    }
+
+    // Get public URL
+    const { data: urlData } = supa.storage.from(BUCKET).getPublicUrl(path);
+    const publicUrl = urlData.publicUrl;
+
+    // Update DOM
+    if (isVideo) {
+      // Replace <img> with <video> if needed
+      let video = currentImgWrap.querySelector('video');
+      let img   = currentImgWrap.querySelector('img');
+      if (!video) {
+        video = document.createElement('video');
+        video.autoplay = false;
+        video.controls = true;
+        video.loop = true;
+        video.style.cssText = img ? img.style.cssText : 'width:100%;display:block;';
+        if (img) { video.id = img.id; img.replaceWith(video); }
+        else currentImgWrap.appendChild(video);
       }
-      showToast('Imagen actualizada');
-    };
-    reader.readAsDataURL(file);
+      video.src = publicUrl;
+    } else {
+      let el = currentImgWrap.querySelector('img') || currentImgWrap.querySelector('video');
+      if (el) el.src = publicUrl;
+    }
+
+    // Save URL reference to DB
+    await saveMediaRef(imgKey, publicUrl);
+    showToast('¡Archivo subido y guardado! ✓');
     this.value = '';
   });
 
-  /* ── SAVE ── */
-  function saveContent() {
-    const data = {};
+  /* ══════════════════════════════════════
+     SAVE TEXTS → SUPABASE DB
+  ══════════════════════════════════════ */
+  async function saveContent() {
+    showToast('Guardando…');
 
-    // Text content
+    const upserts = [];
+
+    // Collect all editable text elements that have an id
     document.querySelectorAll('[contenteditable]').forEach(el => {
-      if (el.id) data['text_' + el.id] = el.innerHTML;
-      else if (el.className) data['text_' + el.className.split(' ')[0] + '_' + Math.random().toString(36).slice(2,6)] = el.innerHTML;
-    });
-
-    // Images with new src (base64 replacements)
-    document.querySelectorAll('img').forEach(img => {
-      if (img.id && img.dataset.newSrc) {
-        data['img_' + img.id] = img.dataset.newSrc;
+      if (el.id) {
+        upserts.push({ key: 'text__' + el.id, value: el.innerHTML });
       }
     });
 
-    try {
-      localStorage.setItem(STORE_KEY, JSON.stringify(data));
-      showToast('Guardado correctamente ✓');
-    } catch(e) {
-      showToast('Error al guardar (imagen muy grande)');
+    if (upserts.length === 0) {
+      showToast('Nada que guardar');
+      return;
+    }
+
+    const { error } = await supa.from(TABLE).upsert(upserts, { onConflict: 'key' });
+
+    if (error) {
+      showToast('Error: ' + error.message);
+    } else {
+      showToast('Guardado en Supabase ✓');
     }
   }
 
-  /* ── LOAD SAVED DATA ── */
-  function loadSaved() {
-    try {
-      const raw = localStorage.getItem(STORE_KEY);
-      if (!raw) return;
-      const data = JSON.parse(raw);
-
-      Object.keys(data).forEach(key => {
-        if (key.startsWith('img_')) {
-          const imgId = key.replace('img_', '');
-          const img = document.getElementById(imgId);
-          if (img) img.src = data[key];
-        }
-      });
-
-      // Text nodes — apply saved HTML to matching elements
-      document.querySelectorAll('[contenteditable]').forEach(el => {
-        if (el.id && data['text_' + el.id]) {
-          el.innerHTML = data['text_' + el.id];
-        }
-      });
-    } catch(e) {}
+  /* Helper: save a single media URL reference */
+  async function saveMediaRef(imgKey, url) {
+    await supa.from(TABLE).upsert(
+      [{ key: 'media__' + imgKey, value: url }],
+      { onConflict: 'key' }
+    );
   }
 
-  /* ── TOAST ── */
+  /* ══════════════════════════════════════
+     LOAD FROM SUPABASE ON PAGE OPEN
+  ══════════════════════════════════════ */
+  async function loadFromSupabase() {
+    const { data, error } = await supa.from(TABLE).select('key, value');
+    if (error || !data) return;
+
+    data.forEach(({ key, value }) => {
+      /* ── Texts ── */
+      if (key.startsWith('text__')) {
+        const elId = key.replace('text__', '');
+        const el   = document.getElementById(elId);
+        if (el) el.innerHTML = value;
+      }
+
+      /* ── Media ── */
+      if (key.startsWith('media__')) {
+        const imgKey = key.replace('media__', '');
+        // Find the img-wrap that owns this key
+        const wrap = document.querySelector(`[data-img-key="${imgKey}"]`);
+        if (!wrap) return;
+
+        const isVideo = /\.(mp4|webm|mov|ogg)(\?|$)/i.test(value);
+
+        if (isVideo) {
+          let video = wrap.querySelector('video');
+          let img   = wrap.querySelector('img');
+          if (!video) {
+            video = document.createElement('video');
+            video.autoplay = false;
+            video.controls = true;
+            video.loop = true;
+            if (img) { video.id = img.id; video.style.cssText = img.style.cssText; img.replaceWith(video); }
+            else wrap.appendChild(video);
+          }
+          video.src = value;
+        } else {
+          const img = wrap.querySelector('img');
+          if (img) img.src = value;
+        }
+      }
+    });
+  }
+
+  /* ══════════════════════════════════════
+     TOAST
+  ══════════════════════════════════════ */
   let toastTimer;
   function showToast(msg) {
     const t = document.getElementById('toast');
     t.textContent = msg;
     t.classList.add('show');
     clearTimeout(toastTimer);
-    toastTimer = setTimeout(() => t.classList.remove('show'), 2500);
+    toastTimer = setTimeout(() => t.classList.remove('show'), 3000);
   }
 
-  /* ── INIT ── */
-  loadSaved();
+  /* ══════════════════════════════════════
+     INIT
+  ══════════════════════════════════════ */
+  loadFromSupabase();
 </script>
 </body>
 </html>
