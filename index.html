@@ -103,11 +103,21 @@
     .hero-bg img {
       width: 100%; height: 100%;
       object-fit: cover;
-      object-position: center 20%;
-      filter: brightness(0.35) grayscale(20%);
+      object-position: 60% center;
+      filter: brightness(0.38) grayscale(20%);
       transition: transform 8s ease;
     }
     #hero:hover .hero-bg img { transform: scale(1.03); }
+    @media (max-width: 600px) {
+      .hero-bg img { object-position: 65% center; }
+      #hero { padding: 0 24px 48px; }
+    }
+    /* Hero edit overlay */
+    body.edit-mode .hero-bg .img-wrap::after {
+      content: "📷 cambiar foto de portada";
+      font-size: 13px;
+      z-index: 10;
+    }
     .hero-grain {
       position: absolute;
       inset: 0;
@@ -285,6 +295,7 @@
     .bio-imgs .img-wrap img {
       width: 100%; display: block;
       object-fit: cover;
+      border-radius: 10px;
     }
     .bio-imgs .img-wrap:first-child img { height: 380px; }
     .bio-imgs .img-wrap:not(:first-child) img { height: 200px; }
@@ -338,7 +349,7 @@
       gap: 6px;
       margin: 0 48px 0;
     }
-    .g-item { overflow: hidden; position: relative; }
+    .g-item { overflow: hidden; position: relative; border-radius: 8px; }
     .g-item img, .g-item video {
       width: 100%; height: 100%;
       object-fit: cover; display: block;
@@ -372,6 +383,7 @@
       background: #111;
       border: 1px solid var(--line);
       overflow: hidden;
+      border-radius: 8px;
       transition: box-shadow 0.2s, opacity 0.2s;
       user-select: none;
     }
@@ -761,8 +773,8 @@
   <ul class="nav-links">
     <li><a href="#bio">Bio</a></li>
     <li><a href="#gallery">Media</a></li>
-    <li><a href="#social">Links</a></li>
     <li><a href="#rider">Rider</a></li>
+    <li><a href="#social">Links</a></li>
     <li><a href="#contact">Booking</a></li>
   </ul>
 </nav>
@@ -770,8 +782,8 @@
 <!-- ══ HERO ══ -->
 <section id="hero">
   <div class="hero-bg">
-    <div class="img-wrap" data-img-key="hero" onclick="triggerImgChange(this)">
-      <img src="images/hero.png" alt="KATO" id="img-hero" />
+    <div class="img-wrap" data-img-key="hero" onclick="triggerImgChange(this)" style="position:absolute;inset:0;">
+      <img src="images/hero.png" alt="KATO" id="img-hero" style="width:100%;height:100%;object-fit:cover;object-position:60% center;filter:brightness(0.38) grayscale(20%);transition:transform 8s ease;" />
     </div>
   </div>
   <div class="hero-grain"></div>
@@ -874,18 +886,68 @@
   <div class="gallery-edit-grid" id="gallery-edit" style="display:none;"></div>
 </div>
 
+<!-- ══ RIDER ══ -->
+<div class="section-wrap" id="rider">
+  <div class="inner">
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <span class="sec-title">Rider Técnico</span>
+    </div>
+    <div class="rider-layout">
+      <div>
+        <h2 id="el-rider-title" class="rider-big-title" contenteditable="false">Setup<br>Ideal</h2>
+        <div class="rider-blocks">
+          <div class="rider-row">
+            <span id="el-r-cat1" class="rider-cat" contenteditable="false">Player 01</span>
+            <span id="el-r-val1" class="rider-val" contenteditable="false">Pioneer CDJ 2000 NXS2 / CDJ 3000</span>
+          </div>
+          <div class="rider-row">
+            <span id="el-r-cat2" class="rider-cat" contenteditable="false">Player 02</span>
+            <span class="rider-val" contenteditable="false">Pioneer CDJ 2000 NXS2 / CDJ 3000</span>
+          </div>
+          <div class="rider-row">
+            <span class="rider-cat" contenteditable="false">Player 03</span>
+            <span class="rider-val" contenteditable="false">Pioneer CDJ 2000 NXS2 / CDJ 3000</span>
+          </div>
+          <div class="rider-row">
+            <span class="rider-cat" contenteditable="false">Mixer</span>
+            <span class="rider-val" contenteditable="false">DJM 2000 NXS / DJM V10 / Xone 96</span>
+          </div>
+          <div class="rider-row">
+            <span class="rider-cat" contenteditable="false">Efectos</span>
+            <span class="rider-val" contenteditable="false">Pioneer RMX 1000</span>
+          </div>
+          <div class="rider-row">
+            <span class="rider-cat" contenteditable="false">Vinilo</span>
+            <span class="rider-val" contenteditable="false">Technics SL1200</span>
+          </div>
+          <div class="rider-row">
+            <span class="rider-cat" contenteditable="false">Monitores</span>
+            <span class="rider-val" contenteditable="false">× 2 con lows, uno de cada lado</span>
+          </div>
+        </div>
+      </div>
+      <div class="rider-img-col">
+        <div class="img-wrap" data-img-key="rider" onclick="triggerImgChange(this)" style="border-radius:10px; overflow:hidden;">
+          <img src="images/rider.png" alt="Rider" id="img-rider" style="width:100%; display:block;" />
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
 <!-- ══ SOCIAL ══ -->
 <div class="section-wrap" id="social">
   <div class="inner">
     <div class="sec-head">
-      <span class="sec-num">04</span>
+      <span class="sec-num">05</span>
       <span class="sec-title">Links · Redes</span>
     </div>
     <div class="social-list">
       <a class="social-row" href="https://www.instagram.com/kato_uy?igsi=dDJ6NjA0czVpdng=" target="_blank" id="link-instagram">
         <div class="social-row-left">
           <span id="el-s-ig-name" class="social-platform" contenteditable="false">Instagram</span>
-          <span id="el-s-ig-handle" class="social-handle" contenteditable="false">@djkato</span>
+          <span id="el-s-ig-handle" class="social-handle" contenteditable="false">@kato_uy</span>
         </div>
         <span class="social-arrow">↗</span>
       </a>
@@ -917,59 +979,6 @@
         </div>
         <span class="social-arrow">↗</span>
       </a>
-    </div>
-  </div>
-</div>
-
-<!-- ══ RIDER ══ -->
-<div class="section-wrap" id="rider">
-  <div class="inner">
-    <div class="sec-head">
-      <span class="sec-num">05</span>
-      <span class="sec-title">Rider Técnico</span>
-    </div>
-    <div class="rider-layout">
-      <div>
-        <h2 id="el-rider-title" class="rider-big-title" contenteditable="false">Setup<br>Ideal</h2>
-        <div class="rider-blocks">
-          <div class="rider-row">
-            <span id="el-r-cat1" class="rider-cat" contenteditable="false">Player 01</span>
-            <span id="el-r-val1" id="el-r-val1" class="rider-val" contenteditable="false">Pioneer CDJ 2000 NXS2 / CDJ 3000</span>
-          </div>
-          <div class="rider-row">
-            <span id="el-r-cat2" class="rider-cat" contenteditable="false">Player 02</span>
-            <span class="rider-val" contenteditable="false">Pioneer CDJ 2000 NXS2 / CDJ 3000</span>
-          </div>
-          <div class="rider-row">
-            <span class="rider-cat" contenteditable="false">Player 03</span>
-            <span class="rider-val" contenteditable="false">Pioneer CDJ 2000 NXS2 / CDJ 3000</span>
-          </div>
-          <div class="rider-row">
-            <span class="rider-cat" contenteditable="false">Mixer</span>
-            <span class="rider-val" contenteditable="false">DJM 2000 NXS / DJM V10 / Xone 96</span>
-          </div>
-          <div class="rider-row">
-            <span class="rider-cat" contenteditable="false">Efectos</span>
-            <span class="rider-val" contenteditable="false">Pioneer RMX 1000</span>
-          </div>
-          <div class="rider-row">
-            <span class="rider-cat" contenteditable="false">Vinilo</span>
-            <span class="rider-val" contenteditable="false">Technics SL1200</span>
-          </div>
-          <div class="rider-row">
-            <span class="rider-cat" contenteditable="false">Monitores</span>
-            <span class="rider-val" contenteditable="false">× 2 con lows, uno de cada lado</span>
-          </div>
-        </div>
-      </div>
-      <div class="rider-img-col">
-        <div class="img-wrap" data-img-key="rider" onclick="triggerImgChange(this)">
-          <img src="images/rider.png" alt="Rider" id="img-rider" />
-        </div>
-        <div class="img-wrap" data-img-key="logo" onclick="triggerImgChange(this)" style="padding:32px; background:#111; display:flex; align-items:center; justify-content:center;">
-          <img src="images/logo.png" alt="Logo" id="img-logo" style="max-width:200px;" />
-        </div>
-      </div>
     </div>
   </div>
 </div>
