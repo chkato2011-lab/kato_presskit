@@ -416,38 +416,108 @@
       line-height: 1.7;
     }
 
-    /* ══ GALLERY ══ */
+    /* ══ GALLERY CAROUSEL ══ */
     #gallery { padding: 0; }
     #gallery .inner { padding-top: 72px; padding-bottom: 0; }
 
-    /* Public view */
-    .gallery-full {
-      display: grid;
-      grid-template-columns: repeat(12, 1fr);
-      grid-auto-rows: 260px;
-      gap: 6px;
-      margin: 0 48px 0;
+    .carousel-wrap {
+      position: relative;
+      margin: 0 48px;
+      overflow: hidden;
     }
-    .g-item { overflow: hidden; position: relative; border-radius: 8px; }
-    .g-item img, .g-item video {
+    .carousel-track {
+      display: flex;
+      gap: 12px;
+      transition: transform 0.5s cubic-bezier(0.4,0,0.2,1);
+      will-change: transform;
+    }
+    .carousel-slide {
+      flex: 0 0 auto;
+      width: 520px;
+      height: 360px;
+      border-radius: 10px;
+      overflow: hidden;
+      position: relative;
+    }
+    .carousel-slide img, .carousel-slide video {
       width: 100%; height: 100%;
       object-fit: cover; display: block;
-      transition: transform 0.6s ease, filter 0.4s;
-      filter: grayscale(15%);
+      filter: grayscale(10%);
+      transition: filter 0.4s, transform 0.5s;
     }
-    .g-item:hover img, .g-item:hover video { transform: scale(1.04); filter: grayscale(0%); }
-    .g-item:nth-child(1)  { grid-column: span 7; grid-row: span 2; }
-    .g-item:nth-child(2)  { grid-column: span 5; }
-    .g-item:nth-child(3)  { grid-column: span 5; }
-    .g-item:nth-child(4)  { grid-column: span 4; }
-    .g-item:nth-child(5)  { grid-column: span 4; }
-    .g-item:nth-child(6)  { grid-column: span 4; }
-    .g-item:nth-child(7)  { grid-column: span 12; }
-    .g-item:nth-child(8)  { grid-column: span 6; }
-    .g-item:nth-child(9)  { grid-column: span 6; }
-    .g-item:nth-child(10) { grid-column: span 4; }
-    .g-item:nth-child(11) { grid-column: span 4; }
-    .g-item:nth-child(12) { grid-column: span 4; }
+    .carousel-slide:hover img,
+    .carousel-slide:hover video { filter: grayscale(0%); transform: scale(1.03); }
+    .carousel-arrow {
+      position: absolute;
+      top: 50%; transform: translateY(-50%);
+      z-index: 10;
+      width: 48px; height: 48px;
+      background: rgba(10,10,10,0.8);
+      border: 1px solid var(--line);
+      border-radius: 50%;
+      color: var(--text);
+      font-size: 20px;
+      display: flex; align-items: center; justify-content: center;
+      cursor: pointer;
+      transition: background 0.2s, border-color 0.2s, color 0.2s;
+      user-select: none;
+    }
+    .carousel-arrow:hover { background: rgba(200,168,75,0.15); border-color: var(--gold); color: var(--gold); }
+    .carousel-arrow.prev { left: -24px; }
+    .carousel-arrow.next { right: -24px; }
+    .carousel-dots {
+      display: flex; justify-content: center; gap: 8px;
+      padding: 24px 0 60px;
+    }
+    .carousel-dot {
+      width: 6px; height: 6px;
+      border-radius: 50%;
+      background: var(--line);
+      cursor: pointer;
+      transition: background 0.2s, transform 0.2s;
+      border: none;
+    }
+    .carousel-dot.active { background: var(--gold); transform: scale(1.5); }
+
+    /* ══ VIDEOS ══ */
+    #videos { padding: 0; }
+    #videos .inner { padding-top: 72px; padding-bottom: 100px; }
+    .videos-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 20px;
+    }
+    .video-card { display: flex; flex-direction: column; gap: 12px; }
+    .video-embed {
+      position: relative;
+      width: 100%; aspect-ratio: 16/9;
+      border-radius: 10px; overflow: hidden;
+      background: #111; border: 1px solid var(--line);
+    }
+    .video-embed iframe { position: absolute; inset: 0; width: 100%; height: 100%; border: none; }
+    .video-edit-url { display: none; flex-direction: column; gap: 8px; }
+    body.edit-mode .video-edit-url { display: flex; }
+    .video-url-label {
+      font-family: var(--f-head); font-size: 9px;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--gold);
+    }
+    .video-url-input {
+      background: rgba(0,0,0,0.5); border: 1px solid var(--line);
+      border-radius: 4px; color: var(--text);
+      font-family: var(--f-body); font-size: 12px;
+      padding: 8px 12px; outline: none; width: 100%;
+      transition: border-color 0.2s;
+    }
+    .video-url-input:focus { border-color: var(--gold); }
+    .video-url-apply {
+      padding: 7px 16px; background: transparent;
+      border: 1px solid var(--gold); color: var(--gold);
+      font-family: var(--f-head); font-size: 10px;
+      letter-spacing: 2px; text-transform: uppercase;
+      cursor: pointer; align-self: flex-start;
+      transition: background 0.2s, color 0.2s;
+    }
+    .video-url-apply:hover { background: var(--gold); color: #000; }
 
     /* Edit mode drag grid */
     .gallery-edit-grid {
@@ -547,8 +617,12 @@
     body.edit-mode .ge-drag-hint { display: block; }
 
     @media (max-width: 900px) {
-      .gallery-full { margin: 0 24px; grid-auto-rows: 180px; }
+      .carousel-wrap { margin: 0 24px; }
+      .carousel-slide { width: 85vw; height: 240px; }
+      .carousel-arrow.prev { left: -12px; }
+      .carousel-arrow.next { right: -12px; }
       .gallery-edit-grid { padding: 0 24px 40px; grid-template-columns: repeat(2,1fr); }
+      .videos-grid { grid-template-columns: 1fr; }
     }
 
     /* ══ SOCIAL / LINKS ══ */
@@ -920,7 +994,8 @@
   <div id="el-nav-logo" class="nav-logo" contenteditable="false">KATO</div>
   <ul class="nav-links">
     <li><a href="#bio">Bio</a></li>
-    <li><a href="#gallery">Media</a></li>
+    <li><a href="#gallery">Fotos</a></li>
+    <li><a href="#videos">Videos</a></li>
     <li><a href="#rider">Rider</a></li>
     <li><a href="#social">Links</a></li>
     <li><a href="#contact">Booking</a></li>
@@ -1042,7 +1117,7 @@
   </div>
 </div>
 
-<!-- ══ GALLERY ══ -->
+<!-- ══ GALLERY CAROUSEL ══ -->
 <div class="section-wrap" id="gallery">
   <div class="inner">
     <div class="sec-head">
@@ -1050,11 +1125,63 @@
       <span class="sec-title">Media · Fotos</span>
     </div>
   </div>
-  <!-- Public view (hidden in edit mode via JS) -->
-  <div class="gallery-full" id="gallery-public"></div>
+  <!-- Public carousel -->
+  <div id="gallery-public-wrap" style="position:relative;">
+    <div class="carousel-wrap">
+      <div class="carousel-track" id="carousel-track"></div>
+    </div>
+    <button class="carousel-arrow prev" id="carousel-prev" onclick="carouselMove(-1)">&#8592;</button>
+    <button class="carousel-arrow next" id="carousel-next" onclick="carouselMove(1)">&#8594;</button>
+    <div class="carousel-dots" id="carousel-dots"></div>
+  </div>
   <!-- Edit mode drag grid -->
   <div class="ge-drag-hint">⠿ Usá el ícono para reordenar · Arrastrá la foto para reencuadrar · Hover para cambiar o quitar</div>
   <div class="gallery-edit-grid" id="gallery-edit" style="display:none;"></div>
+</div>
+
+<!-- ══ VIDEOS ══ -->
+<div class="section-wrap" id="videos">
+  <div class="inner">
+    <div class="sec-head">
+      <span class="sec-num">04</span>
+      <span class="sec-title">Videos</span>
+    </div>
+    <div class="videos-grid">
+      <!-- Video 1 -->
+      <div class="video-card">
+        <div class="video-embed" id="video-embed-1">
+          <iframe id="video-iframe-1" src="https://www.youtube.com/embed/?rel=0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+        </div>
+        <div class="video-edit-url">
+          <div class="video-url-label">Link de YouTube</div>
+          <input class="video-url-input" id="video-url-1" type="text" placeholder="https://www.youtube.com/watch?v=..." />
+          <button class="video-url-apply" onclick="applyVideoUrl(1)">Aplicar</button>
+        </div>
+      </div>
+      <!-- Video 2 -->
+      <div class="video-card">
+        <div class="video-embed" id="video-embed-2">
+          <iframe id="video-iframe-2" src="https://www.youtube.com/embed/?rel=0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+        </div>
+        <div class="video-edit-url">
+          <div class="video-url-label">Link de YouTube</div>
+          <input class="video-url-input" id="video-url-2" type="text" placeholder="https://www.youtube.com/watch?v=..." />
+          <button class="video-url-apply" onclick="applyVideoUrl(2)">Aplicar</button>
+        </div>
+      </div>
+      <!-- Video 3 -->
+      <div class="video-card">
+        <div class="video-embed" id="video-embed-3">
+          <iframe id="video-iframe-3" src="https://www.youtube.com/embed/?rel=0" allowfullscreen allow="autoplay; encrypted-media"></iframe>
+        </div>
+        <div class="video-edit-url">
+          <div class="video-url-label">Link de YouTube</div>
+          <input class="video-url-input" id="video-url-3" type="text" placeholder="https://www.youtube.com/watch?v=..." />
+          <button class="video-url-apply" onclick="applyVideoUrl(3)">Aplicar</button>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>
 
 <!-- ══ RIDER ══ -->
@@ -1251,26 +1378,119 @@
     { url: 'images/gallery7.png', isVideo: false, posX: 50, posY: 50 },
   ];
 
-  /* ── Render public gallery ── */
+  /* ── Carousel state ── */
+  let carouselIdx = 0;
+
+  /* ── Render public carousel ── */
   function renderPublicGallery() {
-    const container = document.getElementById('gallery-public');
-    container.innerHTML = '';
-    galleryItems.forEach((item) => {
-      const div = document.createElement('div');
-      div.className = 'g-item';
+    const track = document.getElementById('carousel-track');
+    const dotsEl = document.getElementById('carousel-dots');
+    if (!track) return;
+    track.innerHTML = '';
+    if (dotsEl) dotsEl.innerHTML = '';
+
+    galleryItems.forEach((item, i) => {
+      const slide = document.createElement('div');
+      slide.className = 'carousel-slide';
       const pos = `${item.posX ?? 50}% ${item.posY ?? 50}%`;
       if (item.isVideo) {
         const v = document.createElement('video');
         v.src = item.url; v.loop = true; v.muted = true; v.autoplay = true; v.playsInline = true;
         v.style.objectPosition = pos;
-        div.appendChild(v);
+        slide.appendChild(v);
       } else {
         const img = document.createElement('img');
         img.src = item.url; img.alt = '';
         img.style.objectPosition = pos;
-        div.appendChild(img);
+        slide.appendChild(img);
       }
-      container.appendChild(div);
+      track.appendChild(slide);
+
+      // Dot
+      if (dotsEl) {
+        const dot = document.createElement('button');
+        dot.className = 'carousel-dot' + (i === 0 ? ' active' : '');
+        dot.setAttribute('aria-label', 'Ir a foto ' + (i+1));
+        dot.onclick = () => carouselGoTo(i);
+        dotsEl.appendChild(dot);
+      }
+    });
+
+    carouselIdx = 0;
+    carouselPosition();
+  }
+
+  function carouselPosition() {
+    const track = document.getElementById('carousel-track');
+    if (!track) return;
+    const wrap  = track.parentElement;
+    const slideW = wrap.clientWidth > 600 ? 532 : wrap.clientWidth * 0.85 + 12; // slide + gap
+    track.style.transform = `translateX(${-carouselIdx * slideW}px)`;
+    // Update dots
+    document.querySelectorAll('.carousel-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === carouselIdx);
+    });
+  }
+
+  function carouselMove(dir) {
+    const max = Math.max(0, galleryItems.length - 1);
+    carouselIdx = Math.min(max, Math.max(0, carouselIdx + dir));
+    carouselPosition();
+  }
+
+  function carouselGoTo(i) {
+    carouselIdx = i;
+    carouselPosition();
+  }
+
+  // Touch swipe support
+  let touchStartX = 0;
+  document.addEventListener('DOMContentLoaded', () => {
+    const wrap = document.querySelector('.carousel-wrap');
+    if (wrap) {
+      wrap.addEventListener('touchstart', e => { touchStartX = e.touches[0].clientX; }, { passive: true });
+      wrap.addEventListener('touchend',   e => {
+        const dx = e.changedTouches[0].clientX - touchStartX;
+        if (Math.abs(dx) > 40) carouselMove(dx < 0 ? 1 : -1);
+      });
+    }
+  });
+
+  /* ── YouTube video URL helpers ── */
+  function ytEmbedUrl(url) {
+    if (!url || !url.trim()) return '';
+    // Handle youtu.be/ID
+    let m = url.match(/youtu\.be\/([A-Za-z0-9_-]{11})/);
+    if (m) return `https://www.youtube.com/embed/${m[1]}?rel=0`;
+    // Handle ?v=ID
+    m = url.match(/[?&]v=([A-Za-z0-9_-]{11})/);
+    if (m) return `https://www.youtube.com/embed/${m[1]}?rel=0`;
+    // Already embed URL
+    if (url.includes('youtube.com/embed/')) return url;
+    return '';
+  }
+
+  function applyVideoUrl(num) {
+    const input = document.getElementById('video-url-' + num);
+    const iframe = document.getElementById('video-iframe-' + num);
+    if (!input || !iframe) return;
+    const embed = ytEmbedUrl(input.value.trim());
+    if (!embed) { showToast('URL de YouTube inválida'); return; }
+    iframe.src = embed;
+    showToast('Video ' + num + ' actualizado — guardá los cambios');
+  }
+
+  /* ── Load video URLs from Supabase ── */
+  function loadVideoUrls(data) {
+    [1,2,3].forEach(num => {
+      const row = data.find(r => r.key === 'video__url_' + num);
+      if (row && row.value) {
+        const iframe = document.getElementById('video-iframe-' + num);
+        const input  = document.getElementById('video-url-' + num);
+        const embed  = ytEmbedUrl(row.value);
+        if (iframe && embed) iframe.src = embed;
+        if (input)  input.value = row.value;
+      }
     });
   }
 
@@ -1484,8 +1704,9 @@
     document.getElementById('edit-toolbar').classList.add('show');
     document.querySelectorAll('[contenteditable="false"]').forEach(el => el.setAttribute('contenteditable','true'));
     // Switch gallery views
-    document.getElementById('gallery-public').style.display = 'none';
-    document.getElementById('gallery-edit').style.display   = 'grid';
+    const pubWrap = document.getElementById('gallery-public-wrap');
+    if (pubWrap) pubWrap.style.display = 'none';
+    document.getElementById('gallery-edit').style.display = 'grid';
     renderEditGallery();
     showToast('Modo edición activado');
   }
@@ -1495,9 +1716,10 @@
     document.body.classList.remove('edit-mode');
     document.getElementById('edit-toolbar').classList.remove('show');
     document.querySelectorAll('[contenteditable="true"]').forEach(el => el.setAttribute('contenteditable','false'));
-    // Switch back
-    document.getElementById('gallery-public').style.display = '';
-    document.getElementById('gallery-edit').style.display   = 'none';
+    // Switch back to carousel
+    const pubWrap = document.getElementById('gallery-public-wrap');
+    if (pubWrap) pubWrap.style.display = '';
+    document.getElementById('gallery-edit').style.display = 'none';
     renderPublicGallery();
   }
 
@@ -1696,6 +1918,14 @@
       upserts.push({ key: 'href__' + a.id, value: a.href });
     });
 
+    // Video URLs
+    [1,2,3].forEach(num => {
+      const input = document.getElementById('video-url-' + num);
+      if (input && input.value.trim()) {
+        upserts.push({ key: 'video__url_' + num, value: input.value.trim() });
+      }
+    });
+
     // Gallery order + URLs
     upserts.push({ key: 'gallery__items', value: JSON.stringify(galleryItems) });
 
@@ -1762,6 +1992,7 @@
       }
     });
 
+    loadVideoUrls(data);
     renderPublicGallery();
   }
 
