@@ -1822,6 +1822,7 @@
 
   document.addEventListener('mousemove', e => doPanMove(e.clientX, e.clientY));
   document.addEventListener('touchmove', e => {
+    if (!panIsPanning) return; // solo bloquear scroll cuando el modal de pan está activo
     doPanMove(e.touches[0].clientX, e.touches[0].clientY);
     e.preventDefault();
   }, { passive: false });
