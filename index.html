@@ -635,8 +635,13 @@
       background: rgba(200,168,75,0.04);
     }
     body.edit-mode .img-wrap { position: relative; cursor: pointer; }
-    body.edit-mode .img-wrap .edit-img-overlay {
-      display: none;
+
+    /* Overlay — hidden always, shown only in edit-mode on hover */
+    .edit-img-overlay {
+      display: none !important;
+    }
+    body.edit-mode .img-wrap:hover .edit-img-overlay {
+      display: flex !important;
       position: absolute; inset: 0; z-index: 5;
       flex-direction: column;
       align-items: center; justify-content: center;
@@ -644,7 +649,6 @@
       background: rgba(0,0,0,0.55);
       pointer-events: all;
     }
-    body.edit-mode .img-wrap:hover .edit-img-overlay { display: flex; }
     .edit-img-overlay .eio-btn {
       padding: 7px 18px;
       border: 1px solid rgba(255,255,255,0.25);
@@ -682,11 +686,12 @@
       cursor: move;
       background: #111;
     }
+    /* Image is 250% so there's plenty of room to pan in all directions */
     #pan-frame img, #pan-frame video {
       position: absolute;
-      width: 150%; height: 150%;
+      width: 250%; height: 250%;
       object-fit: cover;
-      top: -25%; left: -25%;
+      top: -75%; left: -75%;
       user-select: none; pointer-events: none;
       transition: none;
     }
@@ -1430,22 +1435,20 @@
     const frame = document.getElementById('pan-frame');
     frame.innerHTML = '';
 
-    // Clone the media element
     const origMedia = wrap.querySelector('img') || wrap.querySelector('video');
     if (!origMedia) return;
 
     panMedia = origMedia.cloneNode(true);
     panMedia.removeAttribute('style');
-    // Position: map posX/posY 0-100 → left/top offset (-50% to 0% since media is 150%)
-    const left = -25 - (pos.posX - 50) * 0.5;
-    const top  = -25 - (pos.posY - 50) * 0.5;
-    panMedia.style.left = left + '%';
-    panMedia.style.top  = top  + '%';
+    // Image is 250% of frame, range: -150% to 0%, center at -75%
+    // posX/posY 0-100 maps to left/top: -150% to 0%
+    const left = -150 + pos.posX * 1.5;   // posX=0→-150, posX=100→0, posX=50→-75
+    const top  = -150 + pos.posY * 1.5;
+    panMedia.style.cssText = `position:absolute; width:250%; height:250%; object-fit:cover; top:${top}%; left:${left}%; user-select:none; pointer-events:none;`;
     frame.appendChild(panMedia);
 
     panOrigPos = { ...pos };
 
-    // Mouse pan inside frame
     frame.addEventListener('mousedown', panStart);
     frame.addEventListener('touchstart', panStartTouch, { passive: false });
 
@@ -1456,8 +1459,8 @@
     panIsPanning = true;
     panStartX = e.clientX;
     panStartY = e.clientY;
-    panBaseLeft = parseFloat(panMedia.style.left) || -25;
-    panBaseTop  = parseFloat(panMedia.style.top)  || -25;
+    panBaseLeft = parseFloat(panMedia.style.left) || -75;
+    panBaseTop  = parseFloat(panMedia.style.top)  || -75;
     e.preventDefault();
   }
   function panStartTouch(e) {
@@ -1465,8 +1468,8 @@
     panIsPanning = true;
     panStartX = t.clientX;
     panStartY = t.clientY;
-    panBaseLeft = parseFloat(panMedia.style.left) || -25;
-    panBaseTop  = parseFloat(panMedia.style.top)  || -25;
+    panBaseLeft = parseFloat(panMedia.style.left) || -75;
+    panBaseTop  = parseFloat(panMedia.style.top)  || -75;
     e.preventDefault();
   }
 
@@ -1476,8 +1479,9 @@
     const rect = frame.getBoundingClientRect();
     const dxPct = (e.clientX - panStartX) / rect.width  * 100;
     const dyPct = (e.clientY - panStartY) / rect.height * 100;
-    let newL = Math.min(0, Math.max(-50, panBaseLeft + dxPct));
-    let newT = Math.min(0, Math.max(-50, panBaseTop  + dyPct));
+    // Clamp: image is 250%, so offset range is -150% to 0%
+    const newL = Math.min(0, Math.max(-150, panBaseLeft + dxPct));
+    const newT = Math.min(0, Math.max(-150, panBaseTop  + dyPct));
     panMedia.style.left = newL + '%';
     panMedia.style.top  = newT + '%';
   });
@@ -1488,8 +1492,8 @@
     const rect = frame.getBoundingClientRect();
     const dxPct = (t.clientX - panStartX) / rect.width  * 100;
     const dyPct = (t.clientY - panStartY) / rect.height * 100;
-    let newL = Math.min(0, Math.max(-50, panBaseLeft + dxPct));
-    let newT = Math.min(0, Math.max(-50, panBaseTop  + dyPct));
+    const newL = Math.min(0, Math.max(-150, panBaseLeft + dxPct));
+    const newT = Math.min(0, Math.max(-150, panBaseTop  + dyPct));
     panMedia.style.left = newL + '%';
     panMedia.style.top  = newT + '%';
     e.preventDefault();
@@ -1501,12 +1505,11 @@
     if (!panWrap || !panMedia) return;
     const newL = parseFloat(panMedia.style.left);
     const newT = parseFloat(panMedia.style.top);
-    // Convert back to posX/posY 0-100
-    const posX = Math.round(50 - (newL + 25) / 0.5);
-    const posY = Math.round(50 - (newT + 25) / 0.5);
+    // Convert back: left -150→0 maps to posX 0→100
+    const posX = Math.round((newL + 150) / 1.5);
+    const posY = Math.round((newT + 150) / 1.5);
     const key = panWrap.dataset.imgKey;
     imgPositions[key] = { posX, posY };
-    // Apply to the real image via object-position
     const realMedia = panWrap.querySelector('img') || panWrap.querySelector('video');
     if (realMedia) realMedia.style.objectPosition = `${posX}% ${posY}%`;
     closePanModal();
