@@ -26,7 +26,7 @@
     html { scroll-behavior: smooth; }
 
     body {
-      background: transparent;
+      background: var(--bg);
       color: var(--text);
       font-family: var(--f-body);
       font-weight: 300;
@@ -36,32 +36,7 @@
       cursor: default;
     }
 
-    /* All section backgrounds transparent so video shows through */
-    .section-wrap, #projects, #gallery,
-    #social, #rider, #contact, footer {
-      background: transparent !important;
-    }
 
-    /* Subtle dark tint behind text content for readability */
-    .section-wrap .inner,
-    #projects .inner,
-    #rider .inner,
-    #social .inner,
-    #contact .inner {
-      position: relative;
-    }
-    .section-wrap .inner::before,
-    #projects .inner::before,
-    #rider .inner::before,
-    #social .inner::before,
-    #contact .inner::before {
-      content: '';
-      position: absolute;
-      inset: 0 -60px;
-      background: rgba(6,6,6,0.55);
-      z-index: -1;
-      pointer-events: none;
-    }
 
     /* ══ SCROLLBAR ══ */
     ::-webkit-scrollbar { width: 2px; }
@@ -106,28 +81,6 @@
       transition: color 0.2s;
     }
     .nav-links a:hover { color: var(--text); }
-
-    /* ══ VIDEO FONDO GLOBAL ══ */
-    #page-video-bg {
-      position: fixed;
-      inset: 0;
-      z-index: -2;
-      overflow: hidden;
-    }
-    #page-video-bg video {
-      width: 100%; height: 100%;
-      object-fit: cover;
-      object-position: center center;
-      filter: blur(18px) brightness(0.18) saturate(0.5);
-      transform: scale(1.08);
-    }
-    /* Dark overlay over the video for readability */
-    #page-video-bg::after {
-      content: '';
-      position: absolute;
-      inset: 0;
-      background: rgba(8,8,8,0.72);
-    }
 
     /* ══ HERO ══ */
     #hero {
@@ -889,7 +842,7 @@
       width: 320px;
       border: 1px solid var(--line);
       padding: 48px 40px;
-      background: var(--bg2);
+      background: var(--bg);
       position: relative;
     }
     .login-box h3 {
@@ -965,29 +918,94 @@
     #toast.show { opacity: 1; }
 
     /* ══ RESPONSIVE ══ */
+
+    /* Prevent ALL horizontal overflow on mobile */
+    html, body {
+      max-width: 100%;
+      overflow-x: hidden;
+    }
+
     @media (max-width: 900px) {
-      nav { padding: 0 24px; }
-      .nav-links { gap: 20px; }
-      #hero { padding: 0 24px 48px; }
-      .inner { padding-left: 24px; padding-right: 24px; }
-      .bio-layout, .rider-layout { grid-template-columns: 1fr; gap: 48px; }
+      /* Nav: logo left, links scroll horizontally */
+      nav {
+        padding: 0 16px;
+        gap: 12px;
+      }
+      .nav-logo { font-size: 16px; letter-spacing: 6px; flex-shrink: 0; }
+      .nav-links {
+        gap: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        -webkit-overflow-scrolling: touch;
+        scrollbar-width: none;
+        -ms-overflow-style: none;
+        flex-shrink: 1;
+        padding: 0 4px;
+      }
+      .nav-links::-webkit-scrollbar { display: none; }
+      .nav-links li { flex-shrink: 0; }
+      .nav-links a { padding: 0 12px; font-size: 10px; letter-spacing: 2px; }
+
+      /* Sections */
+      #hero { padding: 0 20px 48px; }
+      .inner { padding-left: 20px; padding-right: 20px; }
+      .section-wrap .inner::before,
+      #projects .inner::before,
+      #rider .inner::before,
+      #social .inner::before,
+      #contact .inner::before { inset: 0 -20px; }
+
+      /* Bio */
+      .bio-layout { grid-template-columns: 1fr; gap: 36px; }
+      .bio-headline { font-size: 36px; }
+      .bio-imgs { grid-template-columns: 1fr 1fr; }
+      .bio-imgs .img-wrap:first-child { grid-column: span 2; }
+      .bio-imgs .img-wrap:first-child img { height: 260px; }
+      .bio-imgs .img-wrap:not(:first-child) img { height: 140px; }
+
+      /* Projects */
       .projects-grid { grid-template-columns: 1fr; }
       .project-item { border-right: none; border-bottom: 1px solid var(--line); }
-      .gallery-full { grid-template-columns: 1fr 1fr; grid-auto-rows: 200px; }
-      .g-item:nth-child(1) { grid-column: span 2; }
-      .g-item:nth-child(7) { grid-column: span 2; }
-      footer { flex-direction: column; gap: 12px; text-align: center; }
+
+      /* Carousel */
+      .carousel-wrap { margin: 0 20px; }
+      .carousel-slide { width: calc(100vw - 56px); height: 220px; }
+      .carousel-arrow { width: 36px; height: 36px; font-size: 16px; }
+      .carousel-arrow.prev { left: -18px; }
+      .carousel-arrow.next { right: -18px; }
+
+      /* Videos */
+      .videos-grid { grid-template-columns: 1fr; }
+
+      /* Rider */
+      .rider-layout { grid-template-columns: 1fr; gap: 36px; }
+      .rider-big-title { font-size: 48px; }
+
+      /* Social */
+      .social-platform { font-size: 28px; }
+
+      /* Contact */
+      .contact-big { font-size: 52px; letter-spacing: -2px; }
+
+      /* Edit grid */
+      .gallery-edit-grid { padding: 0 20px 40px; grid-template-columns: repeat(2,1fr); }
+
+      /* Footer */
+      footer { flex-direction: column; gap: 12px; text-align: center; padding: 24px 20px; }
+    }
+
+    @media (max-width: 480px) {
+      .hero-name { font-size: 64px; }
+      .bio-headline { font-size: 30px; }
+      .contact-big { font-size: 40px; }
+      .social-platform { font-size: 22px; }
+      .carousel-slide { width: calc(100vw - 48px); height: 190px; }
     }
   </style>
 </head>
 <body>
 
-<!-- ══ VIDEO DE FONDO GLOBAL ══ -->
-<div id="page-video-bg">
-  <video autoplay muted loop playsinline>
-    <source src="images/hero-bg.mp4" type="video/mp4">
-  </video>
-</div>
+
 
 <!-- ══ NAV ══ -->
 <nav>
