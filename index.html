@@ -686,14 +686,15 @@
       cursor: move;
       background: #111;
     }
-    /* Image is 250% so there's plenty of room to pan in all directions */
+    /* JS positions with px — no object-fit, natural dimensions */
     #pan-frame img, #pan-frame video {
       position: absolute;
-      width: 250%; height: 250%;
-      object-fit: cover;
-      top: -75%; left: -75%;
+      max-width: none;
+      width: auto; height: auto;
       user-select: none; pointer-events: none;
       transition: none;
+      display: block;
+      top: 0; left: 0;
     }
     #pan-hint {
       font-family: var(--f-head); font-size: 10px;
@@ -1417,13 +1418,13 @@
   }
 
   /* ── Pan modal state ── */
-  let panWrap = null;        // the img-wrap being panned
-  let panMedia = null;       // the img/video element inside
-  let panOrigPos = {};       // { posX, posY } before modal opened
+  let panWrap = null;
+  let panMedia = null;
+  let panOrigPos = {};
   let panIsPanning = false;
   let panStartX = 0, panStartY = 0;
   let panBaseLeft = 0, panBaseTop = 0;
-  // stored per img-wrap by data-img-key
+  let panMinX = 0, panMaxX = 0, panMinY = 0, panMaxY = 0;
   const imgPositions = {};
 
   function openPanModal(wrap) {
@@ -1440,62 +1441,73 @@
 
     panMedia = origMedia.cloneNode(true);
     panMedia.removeAttribute('style');
-    // Image is 250% of frame, range: -150% to 0%, center at -75%
-    // posX/posY 0-100 maps to left/top: -150% to 0%
-    const left = -150 + pos.posX * 1.5;   // posX=0→-150, posX=100→0, posX=50→-75
-    const top  = -150 + pos.posY * 1.5;
-    panMedia.style.cssText = `position:absolute; width:250%; height:250%; object-fit:cover; top:${top}%; left:${left}%; user-select:none; pointer-events:none;`;
+    panMedia.style.cssText = 'position:absolute; max-width:none; width:auto; height:auto; display:block; user-select:none; pointer-events:none; top:0; left:0;';
     frame.appendChild(panMedia);
 
     panOrigPos = { ...pos };
 
-    frame.addEventListener('mousedown', panStart);
-    frame.addEventListener('touchstart', panStartTouch, { passive: false });
+    // Wait for image to load to get natural dimensions
+    const applyInitialPos = () => {
+      const fw = frame.clientWidth;
+      const fh = frame.clientHeight;
+      // Scale image so it's at least 1.8x the frame in both axes
+      const scale = Math.max(fw / panMedia.naturalWidth, fh / panMedia.naturalHeight) * 1.8;
+      const iw = panMedia.naturalWidth  * scale;
+      const ih = panMedia.naturalHeight * scale;
+      panMedia.style.width  = iw + 'px';
+      panMedia.style.height = ih + 'px';
 
+      // Pan limits: image must always cover frame
+      panMinX = fw - iw;   // most-left (negative)
+      panMaxX = 0;          // most-right
+      panMinY = fh - ih;   // most-top (negative)
+      panMaxY = 0;          // most-bottom
+
+      // Place based on saved posX/posY
+      const initX = panMinX + (pos.posX / 100) * (panMaxX - panMinX);
+      const initY = panMinY + (pos.posY / 100) * (panMaxY - panMinY);
+      panMedia.style.left = initX + 'px';
+      panMedia.style.top  = initY + 'px';
+    };
+
+    if (panMedia.complete && panMedia.naturalWidth) {
+      applyInitialPos();
+    } else {
+      panMedia.onload = applyInitialPos;
+    }
+
+    frame.addEventListener('mousedown',  panStart);
+    frame.addEventListener('touchstart', panStartTouch, { passive: false });
     document.getElementById('pan-modal').classList.add('show');
   }
 
   function panStart(e) {
     panIsPanning = true;
-    panStartX = e.clientX;
-    panStartY = e.clientY;
-    panBaseLeft = parseFloat(panMedia.style.left) || -75;
-    panBaseTop  = parseFloat(panMedia.style.top)  || -75;
+    panStartX = e.clientX; panStartY = e.clientY;
+    panBaseLeft = parseFloat(panMedia.style.left) || 0;
+    panBaseTop  = parseFloat(panMedia.style.top)  || 0;
     e.preventDefault();
   }
   function panStartTouch(e) {
     const t = e.touches[0];
     panIsPanning = true;
-    panStartX = t.clientX;
-    panStartY = t.clientY;
-    panBaseLeft = parseFloat(panMedia.style.left) || -75;
-    panBaseTop  = parseFloat(panMedia.style.top)  || -75;
+    panStartX = t.clientX; panStartY = t.clientY;
+    panBaseLeft = parseFloat(panMedia.style.left) || 0;
+    panBaseTop  = parseFloat(panMedia.style.top)  || 0;
     e.preventDefault();
   }
 
-  document.addEventListener('mousemove', e => {
+  function doPanMove(cx, cy) {
     if (!panIsPanning || !panMedia) return;
-    const frame = document.getElementById('pan-frame');
-    const rect = frame.getBoundingClientRect();
-    const dxPct = (e.clientX - panStartX) / rect.width  * 100;
-    const dyPct = (e.clientY - panStartY) / rect.height * 100;
-    // Clamp: image is 250%, so offset range is -150% to 0%
-    const newL = Math.min(0, Math.max(-150, panBaseLeft + dxPct));
-    const newT = Math.min(0, Math.max(-150, panBaseTop  + dyPct));
-    panMedia.style.left = newL + '%';
-    panMedia.style.top  = newT + '%';
-  });
+    const newL = Math.min(panMaxX, Math.max(panMinX, panBaseLeft + (cx - panStartX)));
+    const newT = Math.min(panMaxY, Math.max(panMinY, panBaseTop  + (cy - panStartY)));
+    panMedia.style.left = newL + 'px';
+    panMedia.style.top  = newT + 'px';
+  }
+
+  document.addEventListener('mousemove', e => doPanMove(e.clientX, e.clientY));
   document.addEventListener('touchmove', e => {
-    if (!panIsPanning || !panMedia) return;
-    const t = e.touches[0];
-    const frame = document.getElementById('pan-frame');
-    const rect = frame.getBoundingClientRect();
-    const dxPct = (t.clientX - panStartX) / rect.width  * 100;
-    const dyPct = (t.clientY - panStartY) / rect.height * 100;
-    const newL = Math.min(0, Math.max(-150, panBaseLeft + dxPct));
-    const newT = Math.min(0, Math.max(-150, panBaseTop  + dyPct));
-    panMedia.style.left = newL + '%';
-    panMedia.style.top  = newT + '%';
+    doPanMove(e.touches[0].clientX, e.touches[0].clientY);
     e.preventDefault();
   }, { passive: false });
   document.addEventListener('mouseup',  () => { panIsPanning = false; });
@@ -1503,12 +1515,12 @@
 
   function confirmPan() {
     if (!panWrap || !panMedia) return;
-    const newL = parseFloat(panMedia.style.left);
-    const newT = parseFloat(panMedia.style.top);
-    // Convert back: left -150→0 maps to posX 0→100
-    const posX = Math.round((newL + 150) / 1.5);
-    const posY = Math.round((newT + 150) / 1.5);
-    const key = panWrap.dataset.imgKey;
+    const curL = parseFloat(panMedia.style.left);
+    const curT = parseFloat(panMedia.style.top);
+    // Convert px position back to 0-100%
+    const posX = panMinX === panMaxX ? 50 : Math.round((curL - panMinX) / (panMaxX - panMinX) * 100);
+    const posY = panMinY === panMaxY ? 50 : Math.round((curT - panMinY) / (panMaxY - panMinY) * 100);
+    const key  = panWrap.dataset.imgKey;
     imgPositions[key] = { posX, posY };
     const realMedia = panWrap.querySelector('img') || panWrap.querySelector('video');
     if (realMedia) realMedia.style.objectPosition = `${posX}% ${posY}%`;
@@ -1517,11 +1529,12 @@
   }
 
   function closePanModal() {
+    const frame = document.getElementById('pan-frame');
+    frame.removeEventListener('mousedown',  panStart);
+    frame.removeEventListener('touchstart', panStartTouch);
     document.getElementById('pan-modal').classList.remove('show');
-    document.getElementById('pan-frame').innerHTML = '';
-    panIsPanning = false;
-    panMedia = null;
-    panWrap = null;
+    frame.innerHTML = '';
+    panIsPanning = false; panMedia = null; panWrap = null;
   }
 
   document.getElementById('img-file-input').addEventListener('change', async function () {
