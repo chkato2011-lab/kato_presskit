@@ -100,6 +100,7 @@
       position: absolute;
       inset: 0;
     }
+    /* Fallback image (hidden when video plays) */
     .hero-bg img {
       width: 100%; height: 100%;
       object-fit: cover;
@@ -107,10 +108,40 @@
       filter: brightness(0.38) grayscale(20%);
       transition: transform 8s ease;
     }
+    /* Video background */
+    .hero-bg video#hero-video {
+      position: absolute;
+      inset: 0;
+      width: 100%; height: 100%;
+      object-fit: cover;
+      object-position: center center;
+      /* blur + darken + slight desaturate */
+      filter: blur(3px) brightness(0.32) saturate(0.7);
+      transform: scale(1.06); /* hide blur edges */
+      transition: none;
+      z-index: 1;
+    }
+    /* Extra dark vignette layer over video */
+    .hero-video-overlay {
+      position: absolute;
+      inset: 0;
+      z-index: 2;
+      background:
+        radial-gradient(ellipse at center, transparent 30%, rgba(0,0,0,0.55) 100%),
+        linear-gradient(to bottom,
+          rgba(10,10,10,0.3) 0%,
+          rgba(10,10,10,0)   25%,
+          rgba(10,10,10,0)   55%,
+          rgba(10,10,10,0.85) 85%,
+          rgba(10,10,10,1)   100%
+        );
+      pointer-events: none;
+    }
     #hero:hover .hero-bg img { transform: scale(1.03); }
     @media (max-width: 600px) {
       .hero-bg img { object-position: 65% center; }
       #hero { padding: 0 24px 48px; }
+      .hero-bg video#hero-video { object-position: 30% center; }
     }
     /* Hero edit overlay */
     body.edit-mode .hero-bg .img-wrap::after {
@@ -844,11 +875,18 @@
 <!-- ══ HERO ══ -->
 <section id="hero">
   <div class="hero-bg">
-    <div class="img-wrap" data-img-key="hero" onclick="triggerImgChange(this)" style="position:absolute;inset:0;">
-      <img src="images/hero.png" alt="KATO" id="img-hero" style="width:100%;height:100%;object-fit:cover;object-position:60% center;filter:brightness(0.38) grayscale(20%);transition:transform 8s ease;" />
-      <div class="edit-img-overlay">
+    <!-- Video de fondo con blur -->
+    <video id="hero-video" autoplay muted loop playsinline>
+      <source src="images/hero-bg.mp4" type="video/mp4">
+    </video>
+    <!-- Capa de vignette/oscurecimiento -->
+    <div class="hero-video-overlay"></div>
+    <!-- img-wrap: imagen fallback + target para cambiar en edit mode -->
+    <div class="img-wrap" data-img-key="hero" onclick="triggerImgChange(this)" style="position:absolute;inset:0;z-index:0;">
+      <img src="images/hero.png" alt="KATO" id="img-hero" style="width:100%;height:100%;object-fit:cover;object-position:60% center;display:none;" />
+      <div class="edit-img-overlay" style="z-index:10;">
         <button class="eio-btn" onclick="event.stopPropagation(); openPanModal(this.closest('.img-wrap'))">Mover encuadre</button>
-        <button class="eio-btn" onclick="event.stopPropagation(); triggerImgChange(this.closest('.img-wrap'))">Cambiar foto</button>
+        <button class="eio-btn" onclick="event.stopPropagation(); triggerImgChange(this.closest('.img-wrap'))">Cambiar video / foto</button>
       </div>
     </div>
   </div>
@@ -1562,6 +1600,22 @@
     } else {
       const el = currentImgWrap.querySelector('img') || currentImgWrap.querySelector('video');
       if (el) el.src = url;
+    }
+    // If replacing hero, update the video element too
+    if (imgKey === 'hero') {
+      const heroVideo = document.getElementById('hero-video');
+      if (heroVideo) {
+        if (isVideo) {
+          heroVideo.querySelector('source') ? heroVideo.querySelector('source').src = url : heroVideo.src = url;
+          heroVideo.load();
+          heroVideo.style.display = '';
+        } else {
+          // Swap to static image: hide video, show img
+          heroVideo.style.display = 'none';
+          const el = currentImgWrap.querySelector('img');
+          if (el) { el.src = url; el.style.display = ''; el.style.filter = 'brightness(0.38) grayscale(20%)'; }
+        }
+      }
     }
     // Reset position for new image
     imgPositions[imgKey] = { posX: 50, posY: 50 };
